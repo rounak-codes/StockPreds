@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import time
 
-def save_stock_data(symbol, path, period="1y"):
+def save_stock_data(symbol, path, period="2y"):
     try:
         data = yf.Ticker(symbol).history(period=period)
         if not data.empty:

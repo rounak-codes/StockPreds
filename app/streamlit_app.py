@@ -3,106 +3,80 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts')))
 
 import streamlit as st
+import pandas as pd
 from utils import get_nse_stock_list, fetch_stock_data
 from predict import predict_from_dataframe
-import pandas as pd
 
-# Define correct model directory path from streamlit_app's perspective
+# Where your .pkl models live
 MODELS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts/models'))
 
 def get_available_stocks(stock_list, region):
-    if region == "india":
-        suffix = ".ns.pkl"
-    elif region == "global":
-        suffix = ".pkl"
-    else:
-        return []
-
+    suffix = ".ns.pkl" if region == "india" else ".pkl"
     prefix = f"{region}_model_"
-    model_files = [f for f in os.listdir(MODELS_DIR) if f.startswith(prefix) and f.endswith(suffix)]
+    files = [f for f in os.listdir(MODELS_DIR) if f.startswith(prefix) and f.endswith(suffix)]
+    syms = [f[len(prefix):-len(suffix)] for f in files]
+    return [s for s in stock_list if s.lower() in syms]
 
-    # Extract symbol names from filenames
-    model_symbols = [f[len(prefix):-len(suffix)] for f in model_files]
-
-    # Match only those stocks that have trained models
-    return [s for s in stock_list if s.lower() in model_symbols]
-
-
-# Global Stock List (from fetchdata.py)
+# Global candidates
 GLOBAL_TOP_50 = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "NVDA", "BRK-B", "UNH", "JNJ",
-    "V", "WMT", "JPM", "MA", "PG", "XOM", "HD", "CVX", "LLY", "ABBV",
-    "PEP", "KO", "BAC", "MRK", "AVGO", "ADBE", "COST", "CSCO", "TMO", "DIS",
-    "DHR", "NKE", "PFE", "MCD", "ABT", "ACN", "CRM", "INTC", "WFC", "LIN",
-    "TXN", "AMD", "NEE", "PM", "BMY", "UNP", "RTX", "LOW", "IBM", "QCOM"
+    "AAPL","MSFT","GOOGL","AMZN","META","TSLA","NVDA","BRK-B","UNH","JNJ",
+    "V","WMT","JPM","MA","PG","XOM","HD","CVX","LLY","ABBV",
+    "PEP","KO","BAC","MRK","AVGO","ADBE","COST","CSCO","TMO","DIS",
+    "DHR","NKE","PFE","MCD","ABT","ACN","CRM","INTC","WFC","LIN",
+    "TXN","AMD","NEE","PM","BMY","UNP","RTX","LOW","IBM","QCOM"
 ]
 
-# UI
 st.title("🌍 Stock Trend Predictor")
-
-# Tabs for Indian and Global Stocks
 tab1, tab2 = st.tabs(["🇮🇳 Indian Stocks", "🌎 Global Stocks"])
 
-# ========== INDIAN STOCKS TAB ==========
-with tab1:
-    st.subheader("📈 Indian Stock Trend Predictor")
-    stock_list = get_available_stocks(get_nse_stock_list(), "india")
-    selected_stock = st.selectbox("Choose an NSE Stock", stock_list, key="india")
+for region, tab, is_indian in [
+    ("india", tab1, True),
+    ("global", tab2, False)
+]:
+    with tab:
+        st.subheader(f"{'Indian' if is_indian else 'Global'} Stock Trend Predictor")
+        base_list = get_nse_stock_list() if is_indian else GLOBAL_TOP_50
+        avail = get_available_stocks(base_list, region)
+        symbol = st.selectbox("Choose a Stock", avail, key=f"sel_{region}")
 
-    if selected_stock:
-        st.subheader(f"Stock: {selected_stock}")
-        data = fetch_stock_data(selected_stock, is_indian=True)
+        if not symbol:
+            st.info("No model available.")
+            continue
 
-        if not data.empty:
-            df = data.reset_index()
-            df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
-            model_filename = next((f for f in os.listdir(MODELS_DIR)
-                      if f.startswith(f"india_model_{selected_stock.lower()}") and f.endswith(".ns.pkl")), None)
+        # Historical fetch
+        data = fetch_stock_data(symbol, is_indian=is_indian)
+        if data.empty:
+            st.error("No data fetched.")
+            continue
 
-            if model_filename:
-                model_path = os.path.join(MODELS_DIR, model_filename)
-            else:
-                st.warning(f"No trained model found for {selected_stock}. Please train it first.")
-                st.stop()
+        df = data.reset_index()
+        model_files = [f for f in os.listdir(MODELS_DIR)
+                       if f.startswith(f"{region}_model_{symbol.lower()}")]
+        if not model_files:
+            st.warning("Model file missing.")
+            continue
+        model_path = os.path.join(MODELS_DIR, model_files[0])
 
+        # Future duration selector
+        dur = st.selectbox("Prediction Duration", ["None", "6 Months", "1 Year", "2 Years"],
+                           key=f"dur_{region}")
+        months_map = {"6 Months": 6, "1 Year": 12, "2 Years": 24}
+        future_months = months_map.get(dur, 0)
 
-            if os.path.exists(model_path):
-                try:
-                    prediction_df = predict_from_dataframe(df.copy(), model_path)
-                    df['Predicted_Close'] = prediction_df['Predicted_Close']
-                    st.line_chart(df[['Close', 'Predicted_Close']])
-                    st.dataframe(df[['Date', 'Close', 'Predicted_Close']].tail())
-                except Exception as e:
-                    st.error(f"Prediction failed: {e}")
-            else:
-                st.warning(f"No trained model found for {selected_stock}. Please train it first.")
-        else:
-            st.error("No data found for this stock.")
+        # Run predictions
+        in_sample, future = predict_from_dataframe(df.copy(), model_path, future_months)
 
-# ========== GLOBAL STOCKS TAB ==========
-with tab2:
-    st.subheader("📊 Global Stock Trend Predictor")
-    global_stock_list = get_available_stocks(GLOBAL_TOP_50, "global")
-    selected_global_stock = st.selectbox("Choose a Global Stock", global_stock_list, key="global")
+        # Show in-sample
+        in_sample['Date'] = pd.to_datetime(in_sample['Date'])
+        in_sample = in_sample.set_index('Date')
+        st.markdown("**Historical vs In-Sample Prediction**")
+        st.line_chart(in_sample[['Close', 'Predicted_Close']])
+        st.dataframe(in_sample[['Close', 'Predicted_Close']].tail().reset_index())
 
-    if selected_global_stock:
-        st.subheader(f"Stock: {selected_global_stock}")
-        data = fetch_stock_data(selected_global_stock, is_indian=False)
-
-        if not data.empty:
-            df = data.reset_index()
-            df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
-            model_path = os.path.join(MODELS_DIR, f"global_model_{selected_global_stock.lower()}.pkl")
-
-            if os.path.exists(model_path):
-                try:
-                    prediction_df = predict_from_dataframe(df.copy(), model_path)
-                    df['Predicted_Close'] = prediction_df['Predicted_Close']
-                    st.line_chart(df[['Close', 'Predicted_Close']])
-                    st.dataframe(df[['Date', 'Close', 'Predicted_Close']].tail())
-                except Exception as e:
-                    st.error(f"Prediction failed: {e}")
-            else:
-                st.warning(f"No trained model found for {selected_global_stock}. Please train it first.")
-        else:
-            st.error("No data found for this stock.")
+        # Show future if selected
+        if future_months:
+            future['Date'] = pd.to_datetime(future['Date'])
+            future = future.set_index('Date')
+            st.markdown(f"**Out-of-Sample Forecast ({dur})**")
+            st.line_chart(future[['Predicted_Close']])
+            st.dataframe(future.reset_index())
