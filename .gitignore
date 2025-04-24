@@ -1,5 +1,6 @@
 .gitignore
 venv
+.venv
 scripts/__pycache__
 app/__pycache__
 models

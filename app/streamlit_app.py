@@ -1,13 +1,15 @@
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts')))
-
-import streamlit as st
 import pandas as pd
-from utils import get_nse_stock_list, fetch_stock_data
-from predict import predict_from_dataframe
+import streamlit as st
+import altair as alt
 
-# Where your .pkl models live
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts')))
+from lstm_predict import predict_with_lstm
+from utils import get_nse_stock_list, fetch_stock_data
+from rf_predict import predict_from_dataframe
+
+# Model directory
 MODELS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts/models'))
 
 def get_available_stocks(stock_list, region):
@@ -38,6 +40,7 @@ for region, tab, is_indian in [
         base_list = get_nse_stock_list() if is_indian else GLOBAL_TOP_50
         avail = get_available_stocks(base_list, region)
         symbol = st.selectbox("Choose a Stock", avail, key=f"sel_{region}")
+        model_type = st.radio("Model Type", ["Traditional", "LSTM"], horizontal=True, key=f"model_{region}")
 
         if not symbol:
             st.info("No model available.")
@@ -64,19 +67,45 @@ for region, tab, is_indian in [
         future_months = months_map.get(dur, 0)
 
         # Run predictions
-        in_sample, future = predict_from_dataframe(df.copy(), model_path, future_months)
+        if model_type == "Traditional":
+            in_sample, future = predict_from_dataframe(df.copy(), model_path, future_months)
+        else:
+            in_sample, future = predict_with_lstm(df.copy(), symbol, region, future_months)
 
-        # Show in-sample
+        # In-sample results
         in_sample['Date'] = pd.to_datetime(in_sample['Date'])
         in_sample = in_sample.set_index('Date')
         st.markdown("**Historical vs In-Sample Prediction**")
-        st.line_chart(in_sample[['Close', 'Predicted_Close']])
+
+        in_sample_chart = alt.Chart(in_sample.reset_index()).transform_fold(
+            ['Close', 'Predicted_Close']
+        ).mark_line().encode(
+            x='Date:T',
+            y='value:Q',
+            color='key:N',
+            tooltip=['Date:T', 'key:N', 'value:Q']
+        ).properties(
+            width='container',
+            height=400
+        ).interactive()
+
+        st.altair_chart(in_sample_chart, use_container_width=True)
         st.dataframe(in_sample[['Close', 'Predicted_Close']].tail().reset_index())
 
-        # Show future if selected
+        # Future prediction
         if future_months:
             future['Date'] = pd.to_datetime(future['Date'])
             future = future.set_index('Date')
-            st.markdown(f"**Out-of-Sample Forecast ({dur})**")
-            st.line_chart(future[['Predicted_Close']])
+            st.markdown(f"**Forecast ({dur})**")
+
+            future_chart = alt.Chart(future.reset_index()).mark_line().encode(
+                x='Date:T',
+                y='Predicted_Close:Q',
+                tooltip=['Date:T', 'Predicted_Close:Q']
+            ).properties(
+                width='container',
+                height=400
+            ).interactive()
+
+            st.altair_chart(future_chart, use_container_width=True)
             st.dataframe(future.reset_index())

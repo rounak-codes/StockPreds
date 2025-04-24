@@ -7,3 +7,4 @@ yfinance
 nsepy
 xgboost
 streamlit
+tensorflow
