@@ -29,6 +29,14 @@ It supports:
 
 ---
 
+## 📈 Screenshots
+
+![Screenshot3](images/3.png)
+![Screenshot1](images/1.png)
+![Screenshot2](images/2.png)
+
+---
+
 ## 📦 Requirements
 
 Install dependencies with:
@@ -108,14 +116,6 @@ It will open the dashboard automatically in your browser! 🌟
 - Train **Random Forest** models separately (using your own scripts or notebooks).
 - Train **LSTM** models and save `.h5` models along with corresponding scalers (`joblib` format).
 - Prophet automatically retrains based on the selected stock.
-
----
-
-## 📈 Screenshots
-
-![Screenshot3](images/3.png)
-![Screenshot1](images/1.png)
-![Screenshot2](images/2.png)
 
 ---
 
