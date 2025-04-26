@@ -8,3 +8,4 @@ nsepy
 xgboost
 streamlit
 tensorflow
+prophet
