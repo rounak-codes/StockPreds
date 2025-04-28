@@ -1,5 +1,3 @@
-Sure! Here’s a clean and professional **README.md** you can use for your project:
-
 ---
 
 # 📈 Stock Market Prediction App
