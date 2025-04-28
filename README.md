@@ -1,5 +1,3 @@
----
-
 # 📈 Stock Market Prediction App
 
 Welcome to the **Stock Market Prediction App** — a full-featured stock trend prediction platform using **Machine Learning** and **Deep Learning** models.
