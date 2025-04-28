@@ -1,6 +1,6 @@
-# 📈 Stock Market Prediction Website
+# 📈 Stock Market Prediction
 
-Welcome to the **Stock Market Prediction App** — a full-featured stock trend prediction platform using **Machine Learning** and **Deep Learning** models.
+Welcome to the **Stock Market Prediction WebApp** — a full-featured stock trend prediction platform using **Machine Learning** and **Deep Learning** models.
 
 It supports:
 - Traditional models like **Random Forest**
