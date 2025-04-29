@@ -4,6 +4,11 @@ venv
 scripts/__pycache__
 app/__pycache__
 models
+<<<<<<< HEAD
 scripts/data
 app/serviceAccountKey.json
 app/.env
+=======
+scripts/data
+>>>>>>> 90ccf2528c436e01be84de2e962b2feb74d0839f
+"app/serviceAccountKey.json" 
