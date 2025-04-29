@@ -3,8 +3,67 @@ import sys
 import pandas as pd
 import streamlit as st
 import altair as alt
+import streamlit as st
+import numpy as np
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from prophet.plot import plot_components_plotly
+st.set_page_config(page_title="Stock Predictor", layout="wide")
+
+from auth_utils import init_firebase, register_user, verify_user, firebase_google_login
+
+init_firebase()
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+    st.session_state.email = None
+
+def login_ui():
+    st.title("🔐 Login/Register")
+    tab1, tab2, tab3 = st.tabs(["Login", "Register", "Google Login"])
+    
+    with tab1:
+        email = st.text_input("Email", key="login_email")
+        password = st.text_input("Password", type="password", key="login_password")
+        if st.button("Login", key="login_button"):
+            if verify_user(email, password):
+                st.session_state.authenticated = True
+                st.session_state.email = email
+                st.success("Logged in successfully")
+                st.rerun()
+            else:
+                st.error("Invalid credentials")
+
+    with tab2:
+        email = st.text_input("Register Email", key="register_email")
+        username = st.text_input("Username", key="register_username")
+        password = st.text_input("Password", type="password", key="register_password")
+        if st.button("Register", key="register_button"):
+            if register_user(email, username, password):
+                st.success("Registered successfully")
+            else:
+                st.error("Registration failed")
+
+    with tab3:
+        token = st.text_area("Paste Firebase ID Token (from client-side Google login)", key="google_token")
+        if st.button("Login with Google", key="google_login_button"):
+            email = firebase_google_login(token)
+            if email:
+                st.session_state.authenticated = True
+                st.session_state.email = email
+                st.success(f"Logged in as {email}")
+                st.rerun()
+            else:
+                st.error("Google login failed")
+
+if not st.session_state.authenticated:
+    login_ui()
+    st.stop()
+else:
+    st.sidebar.success(f"Logged in as: {st.session_state.email}")
+    if st.sidebar.button("Logout", key="logout_button"):
+        st.session_state.authenticated = False
+        st.session_state.email = None
+        st.experimental_rerun()
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts')))
 from lstm_predict import predict_with_lstm
@@ -77,7 +136,6 @@ GLOBAL_TOP_50 = [
     "TXN", "AMD", "NEE", "PM", "BMY", "UNP", "RTX", "LOW", "IBM", "QCOM"
 ]
 
-st.set_page_config(page_title="Stock Predictor", layout="wide")
 st.title("🌍 Stock Trend Predictor")
 tab1, tab2 = st.tabs(["🇮🇳 Indian Stocks", "🌎 Global Stocks"])
 
