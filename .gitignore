@@ -5,3 +5,8 @@ scripts/__pycache__
 app/__pycache__
 models
 scripts/data
+app/serviceAccountKey.json
+app/.env
+scripts/data
+"app/serviceAccountKey.json" 
+scripts/data
