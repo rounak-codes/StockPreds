@@ -113,7 +113,7 @@ else:
             This tab provides insights into the machine learning models used in this application, including their performance metrics, comparisons, advantages, disadvantages, and typical use cases.
 
             ### Models Available:
-            - **RainForest (Random Forest)**: Ensemble-based model for robust general predictions.
+            - **Random Forest (Random Forest)**: Ensemble-based model for robust general predictions.
             - **LSTM (Long Short-Term Memory)**: Neural network designed for sequence prediction and temporal dependencies.
             - **Prophet**: Additive model for time series with seasonality, developed by Facebook.
             - **Prophet + LSTM (Ensemble)**: Combines Prophet and LSTM for enhanced forecasting accuracy.
@@ -127,13 +127,13 @@ else:
             ### Model Comparisons:
             | Model              | Advantages                          | Disadvantages                       |
             |--------------------|-------------------------------------|-------------------------------------|
-            | RainForest         | Handles outliers well, interpretable feature importance | Limited temporal capabilities |
+            | Random Forest         | Handles outliers well, interpretable feature importance | Limited temporal capabilities |
             | LSTM               | Captures temporal dependencies, powerful for sequences | Requires large datasets, computationally intensive |
             | Prophet            | Simple, interpretable, handles seasonality well | Limited to time-based patterns |
             | Prophet + LSTM     | Combines strengths of both models for improved accuracy | High computational cost |
 
             ### Use Cases:
-            - **RainForest:** General tabular data predictions.
+            - **Random Forest:** General tabular data predictions.
             - **LSTM:** Time series analysis and predictions.
             - **Prophet:** Forecasting with seasonal trends.
             - **Prophet + LSTM:** Complex datasets requiring both trend and temporal analysis.
@@ -151,7 +151,7 @@ else:
     # Consolidate common elements for stock tabs
     color_legend = { #
         "Actual": "#3060c6", #
-        "RainForest": "#ffbe1b", # Was #FF851B before, adjusted to match sidebar version #
+        "Random Forest": "#ffbe1b", # Was #FF851B before, adjusted to match sidebar version #
         "LSTM": "#009E73", #
         "Prophet": "#ff1e1e", #
         "Prophet + LSTM": "#B10DC9" #
@@ -273,7 +273,7 @@ else:
                 with col_model: #
                     prefs = get_user_preferences(st.session_state.user_id) #
                     # Set default to empty list for no default selection
-                    all_models_list = ["RainForest", "LSTM", "Prophet", "Prophet + LSTM"] #
+                    all_models_list = ["Random Forest", "LSTM", "Prophet", "Prophet + LSTM"] #
 
                     selected_models = st.multiselect( #
                         "Select Models to Compare", #
@@ -425,11 +425,11 @@ else:
                             mae, mse, rmse, mape = np.nan, np.nan, np.nan, np.nan #
 
                             try: #
-                                if model_type == "RainForest": #
+                                if model_type == "Random Forest": #
                                     if model_exists: #
                                         in_sample, future = predict_from_dataframe(historical_df.copy(), model_path, months) # #
                                     else: #
-                                        st.warning(f"RainForest model file not found for {symbol}. Skipping.") #
+                                        st.warning(f"Random Forest model file not found for {symbol}. Skipping.") #
                                         continue #
 
                                 elif model_type == "LSTM": #
@@ -590,7 +590,7 @@ else:
 
                     color_map = { #
                         "Actual": "#3060c6", #
-                        "RainForest": "#ffbe1b", #
+                        "Random Forest": "#ffbe1b", #
                         "LSTM": "#009E73", #
                         "Prophet": "#ff1e1e", #
                         "Prophet + LSTM": "#B10DC9" #
