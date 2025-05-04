@@ -264,25 +264,20 @@ def profile_tab(user_id, email): #
     # Create tabs for different profile sections
     profile_tabs = st.tabs([ #
         "Profile Information", #
-        "User Preferences", #
         "Watchlist", #
-        "Prediction History", #
-    ]) #
+        "Prediction History", 
+    ]) 
 
     # Profile Information Tab
     with profile_tabs[0]: #
         profile_info_section(user_id) #
 
-    # User Preferences Tab
-    with profile_tabs[1]: #
-        user_preferences_section(user_id) #
-
     # Watchlist Tab
-    with profile_tabs[2]: #
+    with profile_tabs[1]: #
         watchlist_section(user_id) #
 
     # Prediction History Tab
-    with profile_tabs[3]: #
+    with profile_tabs[2]: #
         prediction_history_section(user_id) #
 
 
