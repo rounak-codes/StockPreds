@@ -421,7 +421,14 @@ def watchlist_section(user_id): #
 def prediction_history_section(user_id): #
     st.header("Prediction History") #
     st.write("Past predictions you have generated:") #
+    col_refresh, col_filter_title = st.columns([1, 4]) # Adjust ratio as needed
+    with col_refresh:
+        if st.button("🔄 Refresh History", key="refresh_history_button", use_container_width=True):
+            # Simply rerun the script. This will re-execute this function
+            # and call get_prediction_history again.
+            st.rerun()
 
+    st.markdown("---") # Optional divider
     # --- Date Filter ---
     st.markdown("---") #
     st.subheader("Filter History by Date") #

@@ -252,6 +252,20 @@ else:
             # --- MAIN LOGIC BLOCK: Only proceed if a valid stock is selected ---
             if selected_symbol != default_select_option: #
 
+                user_watchlist = get_watchlist(st.session_state.user_id) # #
+                is_in_watchlist = any(item['symbol'] == selected_symbol and item['region'] == region_name for item in user_watchlist) #
+
+                if is_in_watchlist: #
+                    st.success(f"⭐ '{selected_symbol}' is in your Watchlist (view in Profile tab)") #
+                else: #
+                    if st.button(f"➕ Add '{selected_symbol}' to Watchlist", key=f"add_watchlist_{region_name}_{selected_symbol}"): #
+                        if add_to_watchlist(st.session_state.user_id, selected_symbol, region_name): # Function handles errors/duplicates #
+                            st.success(f"Added {selected_symbol} to watchlist!") #
+                            st.rerun() #
+  
+
+                    st.markdown("---") # Separator #
+
                 # Update recently viewed list when a new stock is selected/viewed
                 current_view = (selected_symbol, region_name) #
                 # Add to front if not already the first item
@@ -309,22 +323,6 @@ else:
 
                 # --- Conditional block for prediction logic ---
                 if run_prediction_button: # Only run prediction when button is clicked
-
-                    # --- Watchlist Button ---
-                    user_watchlist = get_watchlist(st.session_state.user_id) # #
-                    is_in_watchlist = any(item['symbol'] == selected_symbol and item['region'] == region_name for item in user_watchlist) #
-
-                    if is_in_watchlist: #
-                        st.success(f"⭐ '{selected_symbol}' is in your Watchlist (view in Profile tab)") #
-                    else: #
-                        if st.button(f"➕ Add '{selected_symbol}' to Watchlist", key=f"add_watchlist_{region_name}_{selected_symbol}"): #
-                            if add_to_watchlist(st.session_state.user_id, selected_symbol, region_name): # Function handles errors/duplicates #
-                                st.success(f"Added {selected_symbol} to watchlist!") #
-                                st.rerun() #
-                            # else: error is handled inside add_to_watchlist potentially
-
-                    st.markdown("---") # Separator #
-
 
                     # --- Check Prediction History & Limit ---
                     # This logic now runs *before* generating a new prediction
