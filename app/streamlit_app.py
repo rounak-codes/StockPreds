@@ -357,29 +357,52 @@ else:
                         st.warning("Please select at least one model to generate predictions.") #
                         st.stop() #
 
-                    # Fetch data (consider caching)
-                    @st.cache_data(ttl=3600) # Cache data for 1 hour #
-                    def cached_fetch_stock_data(symbol, is_indian_flag): #
-                        return fetch_stock_data(symbol.upper(), is_indian=is_indian_flag) # #
+                    # --- MODIFIED SECTION TO LOAD FROM CSV ---
+                    # --- MODIFIED SECTION TO LOAD FROM CSV ---
+                    try:
+                        # Define the path to your data directory based on the region
+                        # Use the already defined scripts_path
+                        if is_indian:
+                            data_subdir = 'india'
+                            # Adjust filename suffix if necessary based on your actual file names
+                            csv_filename = f"{selected_symbol}.NS.csv" 
+                        else:
+                            data_subdir = 'global'
+                             # Adjust filename suffix if necessary based on your actual file names
+                            csv_filename = f"{selected_symbol}.csv" 
 
-                    try: #
-                        data = cached_fetch_stock_data(selected_symbol, is_indian) #
-                        if data is None or data.empty: #
-                            st.error(f"Could not fetch data for {selected_symbol}. It might be delisted or an issue with the data source.") #
-                            st.stop() #
-                        df = data.reset_index() #
+                        # Construct the full path to the CSV file
+                        # This assumes your data folders are inside scripts/data
+                        csv_path = os.path.join(scripts_path, 'data', data_subdir, csv_filename)
+
+
+                        if not os.path.exists(csv_path):
+                            st.error(f"Data file not found for {selected_symbol} at: {csv_path}")
+                            st.stop()
+
+                        # Read the CSV using pandas
+                        # Make sure 'Date' column is parsed correctly
+                        data = pd.read_csv(csv_path, parse_dates=['Date'])
+                        if data is None or data.empty:
+                            st.error(f"Could not read data or CSV is empty for {selected_symbol} from {csv_path}.")
+                            st.stop()
+
+                        # Keep the existing processing for the DataFrame 'df'
+                        df = data.copy() # Use copy if you might modify 'data' elsewhere, otherwise direct assignment is fine
                         # Ensure Date column is datetime and timezone-naive for consistency
-                        if 'Date' in df.columns: #
-                            df['Date'] = pd.to_datetime(df['Date']).dt.tz_localize(None) #
-                        else: #
-                            st.error("Fetched data is missing the 'Date' column.") #
-                            st.stop() #
+                        if 'Date' in df.columns:
+                            df['Date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
+                        else:
+                            st.error("Loaded CSV data is missing the 'Date' column.")
+                            st.stop()
 
-                    except Exception as e: #
-                        st.error(f"An error occurred fetching data for {selected_symbol}: {e}") #
-                        st.stop() #
-
-
+                    except FileNotFoundError:
+                        st.error(f"Data file not found for {selected_symbol}. Expected at: {csv_path}")
+                        st.stop()
+                    except Exception as e:
+                        st.error(f"An error occurred loading or processing data for {selected_symbol} from CSV: {e}")
+                        st.stop()
+                    # --- END OF MODIFIED SECTION ---
                     # --- Key Statistics ---
                     st.markdown("### 📈 Key Statistics (Based on Historical Data)") #
                     if not df.empty and 'Close' in df.columns and pd.api.types.is_numeric_dtype(df['Close']): #
